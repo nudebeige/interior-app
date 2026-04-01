@@ -42,7 +42,6 @@ def load_items() -> list[dict]:
     try:
         ws   = get_worksheet("items")
         rows = ws.get_all_records()
-        # 빈 행 제거, 숫자형 변환
         result = []
         for r in rows:
             if not r.get("name"):
@@ -53,8 +52,18 @@ def load_items() -> list[dict]:
                 r["id"] = f"item_{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
             result.append(r)
         return result
+    except gspread.exceptions.SpreadsheetNotFound:
+        st.error("❌ 오류: 스프레드시트를 찾을 수 없습니다. spreadsheet_id 또는 공유 설정을 확인하세요.")
+        return []
+    except gspread.exceptions.WorksheetNotFound:
+        st.error("❌ 오류: 'items' 시트를 찾을 수 없습니다. Google Sheets 탭 이름이 정확히 'items' 인지 확인하세요.")
+        return []
+    except gspread.exceptions.APIError as e:
+        st.error(f"❌ Google API 오류: {e.response.status_code} — {e.response.reason}")
+        st.info("해결 방법: Google Cloud Console에서 Sheets API / Drive API 활성화 여부를 확인하세요.")
+        return []
     except Exception as e:
-        st.error(f"자재 목록 불러오기 실패: {e}")
+        st.error(f"❌ 자재 목록 불러오기 실패: {type(e).__name__}: {e}")
         return []
 
 @st.cache_data(ttl=60)
